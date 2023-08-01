@@ -186,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
                     cookies = cookieManager.getCookie(systemUrl);
                     cookieManager.setCookie(systemUrl, cookies);// Replace with your website domain
                     Log.d("Myapp", "onPageFinished: " + cookies + "saved");
-
                 }
             }
 
