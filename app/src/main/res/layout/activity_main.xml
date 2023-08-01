@@ -13,13 +13,13 @@
         android:layout_height="match_parent"
         />
 
-    <Button
-        android:id="@+id/buttonnew"
+   <!-- <Button
+        android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="change orientation"
+        android:text="Go to new page"
         android:layout_marginTop="286dp"
         android:layout_marginLeft="20dp"
-        android:layout_gravity="center_vertical" />
+        android:layout_gravity="center_vertical" />-->
 
 </RelativeLayout>

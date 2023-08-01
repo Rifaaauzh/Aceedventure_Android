@@ -33,7 +33,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.Manifest;
@@ -41,8 +40,6 @@ import android.Manifest;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
-
-import java.security.PrivateKey;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -67,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private static final String SHARED_PREFS_NAME = "loginPrefs";
     private String systemUrl2= "https://portal.mab-academy.com/tmsportal/portal/main_newui.wp";
-
+    private String urlRedirection ="https://mabaportal-dev.voffice.my/tmsportal/index_ok.wp?sessionid=";
+    private String temp;
+    private String cookies;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         isConnected = checkInternetConnection(this);
+
         if (isConnected == true) {
             getSupportActionBar().hide();
             progressDialog = new ProgressDialog(MainActivity.this); //replace CONTEXT with YOUR_ACTIVITY_NAME.CLASS`
@@ -97,11 +97,8 @@ public class MainActivity extends AppCompatActivity {
             webSettings.setLoadWithOverviewMode(false);
             webSettings.setAllowFileAccess(true);
             webSettings.setDomStorageEnabled(true);
-
-            //myWebView.getSettings().setJavaScriptEnabled(true); // true/false to enable disable JavaScript support
-            //myWebView.getSettings().setUserAgentString(new WebView(this).getSettings().getUserAgentString()); //set default user agent as of Chrome
             myWebView.setWebViewClient(new WebViewClient()); //we would be overriding WebViewClient() with custom methods
-            CookieManager.getInstance().removeAllCookies(null);
+            //CookieManager.getInstance().removeAllCookies(null);
             CookieManager cookieManager = CookieManager.getInstance();
             cookieManager.setAcceptCookie(true);
             cookieManager.setAcceptThirdPartyCookies(myWebView, true);
@@ -110,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             sharedPreferences = getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE);
             boolean isLoginHandled = sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false);
             Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
-            if (isLoginHandled) {
+            /*if (isLoginHandled) {
                 loginHandled = true;
                 String cookies = sharedPreferences.getString(KEY_COOKIES, "");
                 Log.d("Myapp", "onCreate:   " + cookies);
@@ -119,10 +116,30 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 // Load the login page URL if there are no saved login credentials
                 myWebView.loadUrl(systemUrl);
+            }*/
+
+
+            try {
+                cookies = cookieManager.getCookie(systemUrl);
+                Log.d("Cookies", "Saved Cookies for" + temp.toString());
+
+                if (cookies.toString() != null){
+                  //  Toast.makeText(this,"cookie :",Toast.LENGTH_SHORT ).show();
+                    myWebView.loadUrl(urlRedirection +  cookies.toString());
+                }
+
+            }catch (Exception e){
+                myWebView.loadUrl(systemUrl);
             }
 
-            //myWebView.setWebChromeClient(new chromeView());
-           // myWebView.loadUrl(systemUrl + "?Mobile=android");
+            /*temp = cookieManager.getCookie(systemUrl);
+            if (temp.length()<0){
+                myWebView.loadUrl(systemUrl);
+            }
+            else
+              //  temp = cookieManager.getCookie(systemUrl);
+                Toast.makeText(this,"cookie :"+temp.toString(),Toast.LENGTH_SHORT ).show();
+                myWebView.loadUrl(systemUrl2);*/
 
             myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "android");
             myWebView.setDownloadListener(new DownloadListener() {
@@ -140,16 +157,10 @@ public class MainActivity extends AppCompatActivity {
             noWebView = (WebView) findViewById(R.id.webview);
             noWebView.getSettings().setJavaScriptEnabled(true);
             noWebView.loadUrl("file:///android_asset/index.html");
-
         }
-
-        //openExternalWebView();
-        // openInternalWebview("https://www.google.com");
     }
 
     private void openExternalWebView(String url){
-
-
         Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("url"));
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         i.setPackage("com.android.chrome");
@@ -173,9 +184,6 @@ public class MainActivity extends AppCompatActivity {
                 myWebView.setWebViewClient(new WebViewClient());
                 myWebView.loadUrl(url);
                 ((RelativeLayout) findViewById(R.id.layout)).removeView(newpagebutton);
-
-
-
             }
         });
 
@@ -198,27 +206,31 @@ public class MainActivity extends AppCompatActivity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             progressDialog.dismiss(); // hide the progress bar once the page has loaded
-            String cookies = CookieManager.getInstance().getCookie(url);
-            Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);// hide the progress bar once the page has loaded
-            if ((!onPageFinishedCalled && !loginHandled && url.equals(systemUrl))) {
-                onPageFinishedCalled = true;
-                // Save the cookies for the current domain
-                CookieSyncManager.createInstance(MainActivity.this);
-                CookieManager cookieManager = CookieManager.getInstance();
-                cookies = cookieManager.getCookie(systemUrl); // Replace with your website domain
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString(KEY_COOKIES, cookies);
-                editor.putBoolean(KEY_LOGIN_FLAG, true);
-                editor.apply();
+            cookies = CookieManager.getInstance().getCookie(url);
+           /* Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);// hide the progress bar once the page has loaded
 
-                // Redirect to the homepage after login
-                myWebView.loadUrl(systemUrl2);
 
-                // Set the flag to true to avoid re-handling login when onPageFinished is called again
-                loginHandled = true;
-                Log.d("Myapp", "onPageFinished: " + cookies + "saved");
-            }else {
-                Log.d("MyApp", "onPageFinished: " + url);}
+                if ((!onPageFinishedCalled && !loginHandled && url.equals(systemUrl)) && cookies != null) {
+                    onPageFinishedCalled = true;
+                    // Save the cookies for the current domain
+                    CookieSyncManager.createInstance(MainActivity.this);
+                    CookieManager cookieManager = CookieManager.getInstance();
+                    cookies = cookieManager.getCookie(systemUrl); // Replace with your website domain
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString(KEY_COOKIES, cookies);
+                    editor.putBoolean(KEY_LOGIN_FLAG, true);
+                    editor.apply();
+
+                    // Redirect to the homepage after login
+                    myWebView.loadUrl(systemUrl2);
+
+                    // Set the flag to true to avoid re-handling login when onPageFinished is called again
+                    loginHandled = true;
+                    Log.d("Myapp", "onPageFinished: " + cookies + "saved");
+                } else {
+                    Log.d("MyApp", "onPageFinished: " + url);
+                }*/
+
         }
 
         @Override
@@ -370,8 +382,12 @@ public class MainActivity extends AppCompatActivity {
 
     public class MyJavascriptInterface {
         Context mContext;
+        private CookieManager cookieManager ;
+        private String loginInfo = "";
+
         MyJavascriptInterface(Context c) {
             mContext = c;
+            this.cookieManager = cookieManager;
         }
 
         @JavascriptInterface
@@ -408,6 +424,20 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showToast(String message){
             Toast.makeText(mContext,message,Toast.LENGTH_SHORT).show();
+        }
+        @JavascriptInterface
+        public void clearCookies() {
+            cookieManager.removeAllCookies(null);
+        }
+        @JavascriptInterface
+        public void storeLoginInfo(String username, String password) {
+            loginInfo = "Username: " + username + ", Password: " + password;
+        }
+
+
+        @JavascriptInterface
+        public String getLoginInfo() {
+            return loginInfo;
         }
 
 
