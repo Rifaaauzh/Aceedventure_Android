@@ -9,24 +9,21 @@ import androidx.core.content.ContextCompat;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
-import android.app.UiModeManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
 import android.view.View;
-import android.view.WindowManager;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -52,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     //private String systemUrl = "https://corporate.usm.my/booking/";
 
     private String systemUrl = "https://portal.mab-academy.com/tmsportal";
-    // private String systemUrl = "https://sso.malaysiaairlines.com/";
+   // private String systemUrl = "https://sso.malaysiaairlines.com/";
     WebView myWebView;
 
     WebView noWebView;
@@ -64,6 +61,12 @@ public class MainActivity extends AppCompatActivity {
     private boolean mIsWebViewVisible = false;
 
     private boolean isConnected = true;
+    private boolean loginHandled = false;
+    private static final String KEY_LOGIN_FLAG = "login_flag";
+    private static final String KEY_COOKIES = "cookies";
+    private SharedPreferences sharedPreferences;
+    private static final String SHARED_PREFS_NAME = "loginPrefs";
+    private String systemUrl2= "https://portal.mab-academy.com/tmsportal/portal/main_newui.wp";
 
 
     @Override
@@ -98,12 +101,28 @@ public class MainActivity extends AppCompatActivity {
             //myWebView.getSettings().setJavaScriptEnabled(true); // true/false to enable disable JavaScript support
             //myWebView.getSettings().setUserAgentString(new WebView(this).getSettings().getUserAgentString()); //set default user agent as of Chrome
             myWebView.setWebViewClient(new WebViewClient()); //we would be overriding WebViewClient() with custom methods
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            cookieManager.setAcceptThirdPartyCookies(myWebView, true);
 
             myWebView.setWebChromeClient(new chromeView()); //we would be overriding WebChromeClient() with custom methods.
+            sharedPreferences = getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE);
+            boolean isLoginHandled = sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false);
+            Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
+            if (isLoginHandled) {
+                loginHandled = true;
+                String cookies = sharedPreferences.getString(KEY_COOKIES, "");
+                Log.d("Myapp", "onCreate:   " + cookies);
+                cookieManager.setCookie(systemUrl2, cookies); // Replace with your website domain
+                myWebView.loadUrl(systemUrl2);
+            } else {
+                // Load the login page URL if there are no saved login credentials
+                myWebView.loadUrl(systemUrl);
+            }
 
             //myWebView.setWebChromeClient(new chromeView());
-//            myWebView.loadUrl(systemUrl + "?Mobile=android");
-            myWebView.loadUrl("https://ddmcloud.educator.com.my/CloudDDM/AndroidDisplay.wp?DevID=3.2.7.0&userid=rizal");
+           // myWebView.loadUrl(systemUrl + "?Mobile=android");
 
             myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "android");
             myWebView.setDownloadListener(new DownloadListener() {
@@ -116,58 +135,45 @@ public class MainActivity extends AppCompatActivity {
                 }
 
             });
-        } else {
+        } else{
             getSupportActionBar().hide();
             noWebView = (WebView) findViewById(R.id.webview);
             noWebView.getSettings().setJavaScriptEnabled(true);
             noWebView.loadUrl("file:///android_asset/index.html");
 
         }
-        newpagebutton = (Button) findViewById(R.id.buttonnew);
+
+        //openExternalWebView();
+        // openInternalWebview("https://www.google.com");
+    }
+
+    private void openExternalWebView(String url){
+
+
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("url"));
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.setPackage("com.android.chrome");
+        try {
+            startActivity(i);
+        } catch (ActivityNotFoundException e) {
+            // Chrome is probably not installed
+            // Try with the default browser
+            i.setPackage(null);
+            startActivity(i);
+        }
+    }
+    public void openInternalWebview(String url){
+        //   newpagebutton = (Button) findViewById(R.id.button);
         newpagebutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              /*  Intent internalIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                Intent internalIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 internalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 myWebView.setWebChromeClient(new WebChromeClient());
                 myWebView.setWebViewClient(new WebViewClient());
-                myWebView.loadUrl(url);*/
-                //invokeOrientation();
-                changeOrientation();
+                myWebView.loadUrl(url);
                 ((RelativeLayout) findViewById(R.id.layout)).removeView(newpagebutton);
 
-                //openExternalWebView();
-                // openInternalWebview("https://www.google.com");
-            }
-
-            private void openExternalWebView(String url) {
-
-
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("url"));
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.setPackage("com.android.chrome");
-                try {
-                    startActivity(i);
-                } catch (ActivityNotFoundException e) {
-                    // Chrome is probably not installed
-                    // Try with the default browser
-                    i.setPackage(null);
-                    startActivity(i);
-                }
-            }
-
-            public void openInternalWebview(String url) {
-       /*    newpagebutton = (Button) findViewById(R.id.buttonnew);
-        newpagebutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-              *//*  Intent internalIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                internalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                myWebView.setWebChromeClient(new WebChromeClient());
-                myWebView.setWebViewClient(new WebViewClient());
-                myWebView.loadUrl(url);*//*
-                invokeOrientation();
-                ((RelativeLayout) findViewById(R.id.layout)).removeView(newpagebutton);*/
 
 
             }
@@ -176,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class WebViewClient extends android.webkit.WebViewClient {
+        private boolean onPageFinishedCalled = false;
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             return super.shouldOverrideUrlLoading(view, request);
@@ -191,20 +198,41 @@ public class MainActivity extends AppCompatActivity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             progressDialog.dismiss(); // hide the progress bar once the page has loaded
+            String cookies = CookieManager.getInstance().getCookie(url);
+            Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);// hide the progress bar once the page has loaded
+            if ((!onPageFinishedCalled && !loginHandled && url.equals(systemUrl))) {
+                onPageFinishedCalled = true;
+                // Save the cookies for the current domain
+                CookieSyncManager.createInstance(MainActivity.this);
+                CookieManager cookieManager = CookieManager.getInstance();
+                cookies = cookieManager.getCookie(systemUrl); // Replace with your website domain
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(KEY_COOKIES, cookies);
+                editor.putBoolean(KEY_LOGIN_FLAG, true);
+                editor.apply();
+
+                // Redirect to the homepage after login
+                myWebView.loadUrl(systemUrl2);
+
+                // Set the flag to true to avoid re-handling login when onPageFinished is called again
+                loginHandled = true;
+                Log.d("Myapp", "onPageFinished: " + cookies + "saved");
+            }else {
+                Log.d("MyApp", "onPageFinished: " + url);}
         }
 
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
-            myWebView.loadData("", "text/html", "utf-8"); // replace the default error page with plan content
+            myWebView.loadData("","text/html","utf-8"); // replace the default error page with plan content
             progressDialog.dismiss(); // hide the progress bar on error in loading
-            Toast.makeText(getApplicationContext(), "Internet issue", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(),"Internet issue",Toast.LENGTH_SHORT).show();
 
 
         }
     }
 
-    public class chromeView extends WebChromeClient {
+    public  class chromeView extends WebChromeClient{
         @SuppressLint("NewApi")
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> valueCallback, FileChooserParams fileChooserParams) {
@@ -231,7 +259,6 @@ public class MainActivity extends AppCompatActivity {
             return Boolean.parseBoolean(null);
         }
     }
-
     public void onActivityResult(int i, int i2, Intent intent) {
         super.onActivityResult(i, i2, intent);
         if (i == 1001 && Build.VERSION.SDK_INT >= 21) {
@@ -239,7 +266,6 @@ public class MainActivity extends AppCompatActivity {
             mUploadMessageArr = null;
         }
     }
-
     @Override
     public void onBackPressed() {
   /* if(myWebView.canGoBack()){
@@ -271,7 +297,6 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         }
     }
-
     public boolean checkInternetConnection(Context context) {
 
         ConnectivityManager con_manager = (ConnectivityManager)
@@ -282,7 +307,9 @@ public class MainActivity extends AppCompatActivity {
                 && con_manager.getActiveNetworkInfo().isAvailable()
                 && con_manager.getActiveNetworkInfo().isConnected()) {
             return true;
-        } else {
+        } else
+
+        {
             return false;
         }
 
@@ -318,6 +345,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
+
     public void getFirebaseToken(FirebaseTokenCallback callback) {
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(new OnCompleteListener<String>() {
@@ -334,7 +363,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
-
     public interface FirebaseTokenCallback {
         void onTokenReceived(String token);
     }
@@ -342,7 +370,6 @@ public class MainActivity extends AppCompatActivity {
 
     public class MyJavascriptInterface {
         Context mContext;
-
         MyJavascriptInterface(Context c) {
             mContext = c;
         }
@@ -370,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
-        public void invokeInternalWebview(String url) {
+        public void invokeInternalWebview(String url){
             Intent internalIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             internalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             myWebView.setWebChromeClient(new WebChromeClient());
@@ -379,8 +406,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
-        public void showToast(String message) {
-            Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+        public void showToast(String message){
+            Toast.makeText(mContext,message,Toast.LENGTH_SHORT).show();
         }
 
 
@@ -402,40 +429,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean invokeOrientation() {
-        boolean bRetBol = false;
-
-        Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        int rotation = display.getRotation();
-
-        switch (rotation) {
-            case Surface.ROTATION_0:
-            case Surface.ROTATION_180:
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                bRetBol = true;
-                break;
-            case Surface.ROTATION_90:
-            case Surface.ROTATION_270:
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-                bRetBol = true;
-                break;
-        }
-
-        return bRetBol;
-    }
-
-    private void changeOrientation() {
-        UiModeManager uiModeManager = (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
-            Toast.makeText(this, "Cannot change orientation on Android TV", Toast.LENGTH_SHORT).show();
-        } else {
-            int currentOrientation = getResources().getConfiguration().orientation;
-
-            if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            } else {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            }
-        }
-    }
 }
