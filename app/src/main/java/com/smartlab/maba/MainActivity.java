@@ -64,6 +64,11 @@ public class MainActivity extends AppCompatActivity {
     private String urlRedirection ="https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=";
     private String temp;
     private String cookies;
+    private SharedPreferences sharedPreferences;
+    private static final String SHARED_PREFS_NAME = "loginPrefs";
+    private static final String KEY_LOGIN_FLAG = "login_flag";
+    private static final String KEY_COOKIES = "cookies";
+    private boolean loginHandled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,15 +105,21 @@ public class MainActivity extends AppCompatActivity {
             cookieManager.setAcceptCookie(true);
             cookieManager.setAcceptThirdPartyCookies(myWebView, true);
             myWebView.setWebChromeClient(new chromeView()); //we would be overriding WebChromeClient() with custom methods.
-            sessionToken = cookieManager.getCookie(systemUrl);
+            //sessionToken = cookieManager.getCookie(systemUrl);
+            sharedPreferences = getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE);
+            boolean isLoginHandled = sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false);
+            Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
 
-           if (sessionToken != null){
-                Log.d("Myapp", "new redirection   " + urlRedirection + sessionToken);
-                myWebView.loadUrl(urlRedirection+ sessionToken);
+
+           if (isLoginHandled){
+                loginHandled = true;
+                cookies = sharedPreferences.getString(KEY_COOKIES, "");
+                Log.d("Myapp", "new redirection   " + urlRedirection + cookies);
+                myWebView.loadUrl(urlRedirection+ cookies);
             }
             else {
                myWebView.loadUrl(systemUrl);
-               Log.d("Myapp", "no token   " + systemUrl + sessionToken);
+               Log.d("Myapp", "no token   " + systemUrl + cookies);
 
            }
 
@@ -179,14 +190,20 @@ public class MainActivity extends AppCompatActivity {
             super.onPageFinished(view, url);
             // hide the progress bar once the page has loaded
             progressDialog.dismiss();
-            if (url.equals(systemUrl)) {
-                if (sessionToken == null){
-                    //CookieSyncManager.createInstance(MainActivity.this);
+            cookies = cookieManager.getCookie(systemUrl);
+            Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);
+            Log.d("Myapp", "onPageFinished called with URL: " + url);
+            if (url.equals(systemUrl + "/indexlms.wp")) {
+                    CookieSyncManager.createInstance(MainActivity.this);
                     cookieManager = CookieManager.getInstance();
                     cookies = cookieManager.getCookie(systemUrl);
-                    cookieManager.setCookie(systemUrl, cookies);// Replace with your website domain
+                    cookieManager.setCookie(systemUrl, cookies);
+                    //CookieSyncManager.createInstance(MainActivity.this);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString(KEY_COOKIES, cookies);
+                    editor.putBoolean(KEY_LOGIN_FLAG, true);
+                    editor.apply();
                     Log.d("Myapp", "onPageFinished: " + cookies + "saved");
-                }
             }
 
         }
