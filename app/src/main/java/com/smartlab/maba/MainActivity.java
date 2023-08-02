@@ -18,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,6 +43,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Objects;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 
 public class MainActivity extends AppCompatActivity {
     //private String systemUrl = "https://corporate.usm.my/booking/";
@@ -61,9 +70,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean mIsWebViewVisible = false;
 
     private boolean isConnected = true;
-    private String urlRedirection ="https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=";
+    private static String urlRedirection ="https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=";
     private String temp;
-    private String cookies;
+    private static String cookies;
     private SharedPreferences sharedPreferences;
     private static final String SHARED_PREFS_NAME = "loginPrefs";
     private static final String KEY_LOGIN_FLAG = "login_flag";
@@ -116,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 cookies = sharedPreferences.getString(KEY_COOKIES, "");
                 Log.d("Myapp", "new redirection   " + urlRedirection + cookies);
                 myWebView.loadUrl(urlRedirection+ cookies);
+                performGetRequest();
             }
             else {
                myWebView.loadUrl(systemUrl);
@@ -299,6 +309,127 @@ public class MainActivity extends AppCompatActivity {
         {
             return false;
         }
+
+    }
+    public interface ResponseCodeCallback {
+        void onResponseCode(int responseCode);
+
+        void onErrorResponse(int errorCode);
+    }
+
+
+    public class MyNetworkTask extends AsyncTask<Void, Void, Integer> {
+        private final ResponseCodeCallback callback;
+
+        public MyNetworkTask(ResponseCodeCallback callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        protected Integer doInBackground(Void... params) {
+            try {
+                URL url = new URL("https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=" + cookies);
+                Log.d("Myapprequest", "makeGetRequest: " + url);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+
+                int responseCode = conn.getResponseCode();
+                Log.d("myapprequest", "makeGetRequest: " + responseCode);
+                conn.disconnect();
+                return responseCode;
+            } catch (IOException e) {
+                // Handle exceptions that occur during the request (e.g., network issues)
+                e.printStackTrace();
+                Log.d("MyApperror", "makeGetRequest: " + e);
+                return -2; // Return a different code for network connectivity issues
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Integer responseCode) {
+            if (responseCode >= 200 && responseCode < 300) {
+                callback.onResponseCode(responseCode);
+            } else if (responseCode == 404 || responseCode == 303 || responseCode == 500) {
+                callback.onErrorResponse(responseCode);
+            } else if (responseCode == -2) {
+                // Handle the case of network connectivity issue separately
+                callback.onErrorResponse(-2); // Return the specific error code for no internet
+            } else {
+                // Handle other response codes or errors
+                callback.onErrorResponse(responseCode);
+            }
+        }
+    }
+
+    public void makeGetRequest(ResponseCodeCallback callback) {
+        MyNetworkTask networkTask = new MyNetworkTask(callback);
+        networkTask.execute();
+    }
+
+    /* public static void makeGetRequest(ResponseCodeCallback callback) {
+        try {
+            URL url = new URL("https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=" + cookies);
+            Log.d("Myapprequest", "makeGetRequest: " + url);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int responseCode = conn.getResponseCode();
+            Log.d("myapprequest", "makeGetRequest: "+ responseCode);// Get the response code from the server
+
+            if (responseCode >= 200 && responseCode < 300) {
+                // Read the response data (if any)
+                // ... Your existing implementation ...
+
+                // Pass the response code to the callback for successful responses
+                callback.onResponseCode(responseCode);
+            } else if(responseCode == 404 || responseCode == 303 || responseCode == 500) {
+
+                callback.onErrorResponse(responseCode);
+            }
+
+            // Close the connection
+            conn.disconnect();
+        } catch (Exception e) {
+            // Handle exceptions that occur during the request (e.g., network issues)
+            e.printStackTrace();
+            Log.d("MyApperror", "makeGetRequest: " + e);
+        }
+    }*/
+    private void performGetRequest() {
+        makeGetRequest(new ResponseCodeCallback() {
+            @Override
+            public void onResponseCode(int responseCode) {
+                // Handle different response codes here
+                if (responseCode == 200) {
+                    // Success (OK)
+                    // ... Handle successful response ...
+                    // For example, you can log the success:
+                    Log.i("RESPONSE", "onResponseCode: succeed " + responseCode);
+                }
+            }
+
+            @Override
+            public void onErrorResponse(int errorCode) {
+                // Handle specific error response codes here
+                if (errorCode == 404) {
+                    Log.i("RESPONSE", "onErrorResponse: Not Found " + errorCode);
+                    System.out.println("RESPONSE: onErrorResponse: Not Found " + errorCode);
+                    noInternet();
+                } else if (errorCode == 303) {
+                    Log.i("RESPONSE", "onErrorResponse: See Other " + errorCode);
+                } else if (errorCode == 500) {
+                    Log.i("RESPONSE", "onErrorResponse: Internal Server Error " + errorCode);
+                }
+            }
+        });
+    }
+    private void noInternet() {
+        Objects.requireNonNull(getSupportActionBar()).hide();
+
+        WebView myWebView = (WebView) findViewById(R.id.webview);
+
+        myWebView.getSettings().setJavaScriptEnabled(true);
+        myWebView.loadUrl("file:///android_asset/no_internet.html");
 
     }
 
