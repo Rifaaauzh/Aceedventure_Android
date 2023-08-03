@@ -564,6 +564,16 @@ public class MainActivity extends AppCompatActivity {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         }
+
+        @JavascriptInterface
+        public void openThisUrl(String url){
+            Intent internalIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            internalIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            myWebView.setWebChromeClient(new WebChromeClient());
+            myWebView.setWebViewClient(new WebViewClient());
+            myWebView.loadUrl(url);
+
+        }
     }
 
 }
