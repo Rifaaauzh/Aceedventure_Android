@@ -46,10 +46,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Objects;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -125,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 cookies = sharedPreferences.getString(KEY_COOKIES, "");
                 Log.d("Myapp", "new redirection   " + urlRedirection + cookies);
                 myWebView.loadUrl(urlRedirection+ cookies);
-                performGetRequest();
+              //  performGetRequest();
             }
             else {
                myWebView.loadUrl(systemUrl);
@@ -185,7 +182,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
-            Toast.makeText(getApplicationContext(),url,Toast.LENGTH_SHORT).show();
+          //  Toast.makeText(getApplicationContext(),url,Toast.LENGTH_SHORT).show();
+            if(url.equals("https://portal.mab-academy.com/tmsportal/website/main/usermain.asp")){
+
+                cookieManager = CookieManager.getInstance();
+                cookies = cookieManager.getCookie("https://portal.mab-academy.com/tmsportal/portal_apps23/main_newui.wp");
+                myWebView.loadUrl(urlRedirection+ cookies);
+
+            }
             return super.shouldOverrideUrlLoading(view, request);
         }
 
@@ -215,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
                     editor.apply();
                     Log.d("Myapp", "onPageFinished: " + cookies + "saved");
             }
+
 
         }
 
@@ -311,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-    public interface ResponseCodeCallback {
+   /* public interface ResponseCodeCallback {
         void onResponseCode(int responseCode);
 
         void onErrorResponse(int errorCode);
@@ -337,11 +342,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("myapprequest", "makeGetRequest: " + responseCode);
                 conn.disconnect();
                 return responseCode;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // Handle exceptions that occur during the request (e.g., network issues)
                 e.printStackTrace();
                 Log.d("MyApperror", "makeGetRequest: " + e);
-                return -2; // Return a different code for network connectivity issues
+                return -1; // You can use a specific value to indicate an error
             }
         }
 
@@ -351,22 +356,18 @@ public class MainActivity extends AppCompatActivity {
                 callback.onResponseCode(responseCode);
             } else if (responseCode == 404 || responseCode == 303 || responseCode == 500) {
                 callback.onErrorResponse(responseCode);
-            } else if (responseCode == -2) {
-                // Handle the case of network connectivity issue separately
-                callback.onErrorResponse(-2); // Return the specific error code for no internet
             } else {
                 // Handle other response codes or errors
                 callback.onErrorResponse(responseCode);
             }
         }
     }
-
     public void makeGetRequest(ResponseCodeCallback callback) {
         MyNetworkTask networkTask = new MyNetworkTask(callback);
         networkTask.execute();
     }
 
-    /* public static void makeGetRequest(ResponseCodeCallback callback) {
+    *//* public static void makeGetRequest(ResponseCodeCallback callback) {
         try {
             URL url = new URL("https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=" + cookies);
             Log.d("Myapprequest", "makeGetRequest: " + url);
@@ -394,7 +395,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             Log.d("MyApperror", "makeGetRequest: " + e);
         }
-    }*/
+    }*//*
     private void performGetRequest() {
         makeGetRequest(new ResponseCodeCallback() {
             @Override
@@ -422,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
+    }*/
     private void noInternet() {
         Objects.requireNonNull(getSupportActionBar()).hide();
 
