@@ -50,13 +50,11 @@ import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity {
-    //private String systemUrl = "https://corporate.usm.my/booking/";
 
-    private String systemUrl = "https://portal.mab-academy.com/tmsportal";
-   // private String systemUrl = "https://sso.malaysiaairlines.com/";
+    //private String systemUrl = "https://portal.mab-academy.com/tmsportal";
+    private String systemUrl = "Https://portal.mab-academy.com/tmsportal/index_landing.wp";
     WebView myWebView;
     CookieManager cookieManager;
-    String sessionToken;
 
     WebView noWebView;
     ProgressDialog progressDialog;
