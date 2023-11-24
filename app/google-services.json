@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "160284621047",
-    "project_id": "maba-f3b07",
-    "storage_bucket": "maba-f3b07.appspot.com"
+    "project_number": "403014737497",
+    "project_id": "aceedventure-d0410",
+    "storage_bucket": "aceedventure-d0410.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:160284621047:android:8d5cb48fd11a0bec2d7bf2",
+        "mobilesdk_app_id": "1:403014737497:android:4787f466018ff3e706db48",
         "android_client_info": {
-          "package_name": "com.smartlab.maba"
+          "package_name": "com.smartlab.aceedventure"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "160284621047-v3qqe2nj2ie4or3c85ps9pciulss6q7v.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCaq_oqaH1ZqfiywwvsQHnMp6nxgIMPn98"
+          "current_key": "AIzaSyCCdIzNmGVZx4CJj3EjlnX40TNpKkdNyLc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "160284621047-v3qqe2nj2ie4or3c85ps9pciulss6q7v.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

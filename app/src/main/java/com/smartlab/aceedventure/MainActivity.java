@@ -1,4 +1,4 @@
-package com.smartlab.maba;
+package com.smartlab.aceedventure;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -51,8 +51,7 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    //private String systemUrl = "https://portal.mab-academy.com/tmsportal";
-    private String systemUrl = "Https://portal.mab-academy.com/tmsportal/index_landing.wp";
+    private String systemUrl = "https://teacher.aceedventure.com/teacher/index_tc.wp";
     WebView myWebView;
     CookieManager cookieManager;
 
@@ -65,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean mIsWebViewVisible = false;
 
     private boolean isConnected = true;
-    private static String urlRedirection ="https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=";
+    private static String urlRedirection ="https://teacher.aceedventure.com/teacher/index_tc.wp";
     private String temp;
     private static String cookies;
     private SharedPreferences sharedPreferences;
@@ -109,26 +108,26 @@ public class MainActivity extends AppCompatActivity {
             cookieManager.setAcceptCookie(true);
             cookieManager.setAcceptThirdPartyCookies(myWebView, true);
             myWebView.setWebChromeClient(new chromeView()); //we would be overriding WebChromeClient() with custom methods.
-            //sessionToken = cookieManager.getCookie(systemUrl);
             sharedPreferences = getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE);
             boolean isLoginHandled = sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false);
             Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
 
-
-           if (isLoginHandled){
+            myWebView.loadUrl(systemUrl);
+           /*if (isLoginHandled){
                 loginHandled = true;
                 cookies = sharedPreferences.getString(KEY_COOKIES, "");
                 Log.d("Myapp", "new redirection   " + urlRedirection + cookies);
                 myWebView.loadUrl(urlRedirection+ cookies);
+               //myWebView.loadUrl(urlRedirection);
               //  performGetRequest();
             }
             else {
                myWebView.loadUrl(systemUrl);
                Log.d("Myapp", "no token   " + systemUrl + cookies);
 
-           }
+           }*/
 
-            myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "android");
+            myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "Android");
             myWebView.setDownloadListener(new DownloadListener() {
                 @Override
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
@@ -173,21 +172,23 @@ public class MainActivity extends AppCompatActivity {
                 ((RelativeLayout) findViewById(R.id.layout)).removeView(newpagebutton);
             }
         });
-
     }
 
     class WebViewClient extends android.webkit.WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
-          //  Toast.makeText(getApplicationContext(),url,Toast.LENGTH_SHORT).show();
-            if(url.equals("https://portal.mab-academy.com/tmsportal/website/main/usermain.asp")){
-
+            Log.d("MyApp",url);
+            Log.d("MyApp","kuki" + cookies);
+           /*if(url.equals("https://teacher.aceedventure.com/teacher/portal/tc_main.wp")){
                 cookieManager = CookieManager.getInstance();
-                cookies = cookieManager.getCookie("https://portal.mab-academy.com/tmsportal/portal_apps23/main_newui.wp");
-                myWebView.loadUrl(urlRedirection+ cookies);
-
+                cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/index_tc.wp");
+                //myWebView.loadUrl(urlRedirection+ cookies);
+               //myWebView.loadUrl(urlRedirection);
             }
+            cookieManager = CookieManager.getInstance();
+            cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/index_tc.wp");*/
+
             return super.shouldOverrideUrlLoading(view, request);
         }
 
@@ -202,10 +203,11 @@ public class MainActivity extends AppCompatActivity {
             super.onPageFinished(view, url);
             // hide the progress bar once the page has loaded
             progressDialog.dismiss();
-            cookies = cookieManager.getCookie(systemUrl);
-            Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);
+            //cookies = cookieManager.getCookie(systemUrl);
+            Log.d("Myapp", "Saved Cookies for " + url + ": " + cookies);
             Log.d("Myapp", "onPageFinished called with URL: " + url);
-            if (url.equals(systemUrl + "/indexlms.wp")) {
+            //https://teacher.aceedventure.com/teacher/portal/tc_main.wp
+           /*if (url.equals(systemUrl)) {
                     CookieSyncManager.createInstance(MainActivity.this);
                     cookieManager = CookieManager.getInstance();
                     cookies = cookieManager.getCookie(systemUrl);
@@ -216,7 +218,8 @@ public class MainActivity extends AppCompatActivity {
                     editor.putBoolean(KEY_LOGIN_FLAG, true);
                     editor.apply();
                     Log.d("Myapp", "onPageFinished: " + cookies + "saved");
-            }
+            }*/
+
 
 
         }
@@ -226,7 +229,6 @@ public class MainActivity extends AppCompatActivity {
             super.onReceivedError(view, request, error);
             myWebView.loadData("","text/html","utf-8"); // replace the default error page with plan content
             progressDialog.dismiss(); // hide the progress bar on error in loading
-            //Toast.makeText(getApplicationContext(),"Internet issue",Toast.LENGTH_SHORT).show();
         }
 
 
@@ -268,10 +270,6 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onBackPressed() {
-  /* if(myWebView.canGoBack()){
-            myWebView.goBack();
-        } else {
-            finish();*/
         if (mIsWebViewVisible) {
             // if the WebView is visible, go back to the previous page if possible
             if (myWebView.canGoBack()) {
@@ -314,114 +312,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-   /* public interface ResponseCodeCallback {
-        void onResponseCode(int responseCode);
-
-        void onErrorResponse(int errorCode);
-    }
-
-
-    public class MyNetworkTask extends AsyncTask<Void, Void, Integer> {
-        private final ResponseCodeCallback callback;
-
-        public MyNetworkTask(ResponseCodeCallback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        protected Integer doInBackground(Void... params) {
-            try {
-                URL url = new URL("https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=" + cookies);
-                Log.d("Myapprequest", "makeGetRequest: " + url);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-
-                int responseCode = conn.getResponseCode();
-                Log.d("myapprequest", "makeGetRequest: " + responseCode);
-                conn.disconnect();
-                return responseCode;
-            } catch (Exception e) {
-                // Handle exceptions that occur during the request (e.g., network issues)
-                e.printStackTrace();
-                Log.d("MyApperror", "makeGetRequest: " + e);
-                return -1; // You can use a specific value to indicate an error
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Integer responseCode) {
-            if (responseCode >= 200 && responseCode < 300) {
-                callback.onResponseCode(responseCode);
-            } else if (responseCode == 404 || responseCode == 303 || responseCode == 500) {
-                callback.onErrorResponse(responseCode);
-            } else {
-                // Handle other response codes or errors
-                callback.onErrorResponse(responseCode);
-            }
-        }
-    }
-    public void makeGetRequest(ResponseCodeCallback callback) {
-        MyNetworkTask networkTask = new MyNetworkTask(callback);
-        networkTask.execute();
-    }
-
-    *//* public static void makeGetRequest(ResponseCodeCallback callback) {
-        try {
-            URL url = new URL("https://portal.mab-academy.com/tmsportal/index_ok.wp?sessionid=" + cookies);
-            Log.d("Myapprequest", "makeGetRequest: " + url);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            int responseCode = conn.getResponseCode();
-            Log.d("myapprequest", "makeGetRequest: "+ responseCode);// Get the response code from the server
-
-            if (responseCode >= 200 && responseCode < 300) {
-                // Read the response data (if any)
-                // ... Your existing implementation ...
-
-                // Pass the response code to the callback for successful responses
-                callback.onResponseCode(responseCode);
-            } else if(responseCode == 404 || responseCode == 303 || responseCode == 500) {
-
-                callback.onErrorResponse(responseCode);
-            }
-
-            // Close the connection
-            conn.disconnect();
-        } catch (Exception e) {
-            // Handle exceptions that occur during the request (e.g., network issues)
-            e.printStackTrace();
-            Log.d("MyApperror", "makeGetRequest: " + e);
-        }
-    }*//*
-    private void performGetRequest() {
-        makeGetRequest(new ResponseCodeCallback() {
-            @Override
-            public void onResponseCode(int responseCode) {
-                // Handle different response codes here
-                if (responseCode == 200) {
-                    // Success (OK)
-                    // ... Handle successful response ...
-                    // For example, you can log the success:
-                    Log.i("RESPONSE", "onResponseCode: succeed " + responseCode);
-                }
-            }
-
-            @Override
-            public void onErrorResponse(int errorCode) {
-                // Handle specific error response codes here
-                if (errorCode == 404) {
-                    Log.i("RESPONSE", "onErrorResponse: Not Found " + errorCode);
-                    System.out.println("RESPONSE: onErrorResponse: Not Found " + errorCode);
-                    noInternet();
-                } else if (errorCode == 303) {
-                    Log.i("RESPONSE", "onErrorResponse: See Other " + errorCode);
-                } else if (errorCode == 500) {
-                    Log.i("RESPONSE", "onErrorResponse: Internal Server Error " + errorCode);
-                }
-            }
-        });
-    }*/
     private void noInternet() {
         Objects.requireNonNull(getSupportActionBar()).hide();
 
@@ -431,8 +321,6 @@ public class MainActivity extends AppCompatActivity {
         myWebView.loadUrl("file:///android_asset/no_internet.html");
 
     }
-
-
     // Declare the launcher at the top of your Activity/Fragment:
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -460,9 +348,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-
-
 
     public void getFirebaseToken(FirebaseTokenCallback callback) {
         FirebaseMessaging.getInstance().getToken()
@@ -513,8 +398,6 @@ public class MainActivity extends AppCompatActivity {
                 browserIntent.setPackage(null);
                 startActivity(browserIntent);
             }
-
-            // startActivity(browserIntent);
         }
 
         @JavascriptInterface
@@ -532,7 +415,10 @@ public class MainActivity extends AppCompatActivity {
         }
         @JavascriptInterface
         public void clearCookies() {
-            cookieManager.removeAllCookies(null);
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
+            Log.d("Myapp", "clear : " + cookies);
+
         }
         @JavascriptInterface
         public void storeLoginInfo(String username, String password) {

@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "MABA"
+rootProject.name = "aceedventure"
 include ':app'

@@ -1,4 +1,4 @@
-package com.smartlab.maba;
+package com.smartlab.aceedventure;
 
 import org.junit.Test;
 

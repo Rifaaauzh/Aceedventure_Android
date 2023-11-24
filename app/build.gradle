@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.smartlab.maba'
+    namespace 'com.smartlab.aceedventure'
     compileSdkVersion 33
 
     defaultConfig {
-        applicationId "com.smartlab.maba"
+        applicationId "com.smartlab.aceedventure"
         minSdk 31
         targetSdk 33
         versionCode 2
