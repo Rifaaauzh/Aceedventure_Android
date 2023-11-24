@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             WebSettings webSettings = myWebView.getSettings();
             webSettings.setJavaScriptEnabled(true);
             webSettings.setUserAgentString(new WebView(this).getSettings().getUserAgentString());
-            webSettings.setLoadWithOverviewMode(false);
+            webSettings.setLoadWithOverviewMode(false)
             webSettings.setAllowFileAccess(true);
             webSettings.setDomStorageEnabled(true);
             myWebView.setWebViewClient(new WebViewClient()); //we would be overriding WebViewClient() with custom methods
