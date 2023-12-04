@@ -16,11 +16,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -35,6 +37,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.Manifest;
@@ -49,9 +52,11 @@ import java.util.Objects;
 
 
 
+
 public class MainActivity extends AppCompatActivity {
 
-    private String systemUrl = "https://teacher.aceedventure.com/teacher/index_tc.wp";
+    private String systemUrl = "https://teacher.aceedventure.com/teacher/index_ok.wp";
+
     WebView myWebView;
     CookieManager cookieManager;
 
@@ -59,12 +64,13 @@ public class MainActivity extends AppCompatActivity {
     ProgressDialog progressDialog;
     private static ValueCallback<Uri[]> mUploadMessageArr;
     private String notytoken;
+    private boolean logOut = false;
 
     Button newpagebutton;
     private boolean mIsWebViewVisible = false;
 
     private boolean isConnected = true;
-    private static String urlRedirection ="https://teacher.aceedventure.com/teacher/index_tc.wp";
+    private static String urlRedirection ="https://teacher.aceedventure.com/teacher/index_ok.wp?sessionid=";
     private String temp;
     private static String cookies;
     private SharedPreferences sharedPreferences;
@@ -72,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LOGIN_FLAG = "login_flag";
     private static final String KEY_COOKIES = "cookies";
     private boolean loginHandled = false;
+    private boolean cookiesRetrieved = false;
+    private String logincookies;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         isConnected = checkInternetConnection(this);
 
+
         if (isConnected == true) {
             getSupportActionBar().hide();
             progressDialog = new ProgressDialog(MainActivity.this); //replace CONTEXT with YOUR_ACTIVITY_NAME.CLASS`
@@ -99,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             WebSettings webSettings = myWebView.getSettings();
             webSettings.setJavaScriptEnabled(true);
             webSettings.setUserAgentString(new WebView(this).getSettings().getUserAgentString());
-            webSettings.setLoadWithOverviewMode(false)
+            webSettings.setLoadWithOverviewMode(false);
             webSettings.setAllowFileAccess(true);
             webSettings.setDomStorageEnabled(true);
             myWebView.setWebViewClient(new WebViewClient()); //we would be overriding WebViewClient() with custom methods
@@ -108,26 +117,42 @@ public class MainActivity extends AppCompatActivity {
             cookieManager.setAcceptCookie(true);
             cookieManager.setAcceptThirdPartyCookies(myWebView, true);
             myWebView.setWebChromeClient(new chromeView()); //we would be overriding WebChromeClient() with custom methods.
+            String sessionToken = cookieManager.getCookie(systemUrl);
             sharedPreferences = getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE);
-            boolean isLoginHandled = sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false);
-            Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
+            final boolean[] isLoginHandled = {sharedPreferences.getBoolean(KEY_LOGIN_FLAG, false)};
+            Log.d("MyApp", "isLoginHandled: " + isLoginHandled[0]);
 
-            myWebView.loadUrl(systemUrl);
-           /*if (isLoginHandled){
-                loginHandled = true;
-                cookies = sharedPreferences.getString(KEY_COOKIES, "");
-                Log.d("Myapp", "new redirection   " + urlRedirection + cookies);
-                myWebView.loadUrl(urlRedirection+ cookies);
-               //myWebView.loadUrl(urlRedirection);
-              //  performGetRequest();
-            }
-            else {
-               myWebView.loadUrl(systemUrl);
-               Log.d("Myapp", "no token   " + systemUrl + cookies);
 
-           }*/
 
-            myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "Android");
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (logOut){
+                        isLoginHandled[0] =false;
+                    }
+                    if (isLoginHandled[0]){
+                        loginHandled = true;
+                        logincookies = sharedPreferences.getString(KEY_COOKIES, "");
+                        String sessionToken = cookieManager.getCookie(systemUrl);
+                        Log.d("Myapp", "new redirection   " + urlRedirection + logincookies);
+                        myWebView.loadUrl(urlRedirection + logincookies.trim());
+                    }
+                    else {
+                        myWebView.loadUrl(systemUrl);
+                        Log.d("Myapp", "no token   " + systemUrl + cookies);
+                    }
+
+
+                    // Dismiss the ProgressDialog
+                    progressDialog.dismiss();
+
+
+                }
+            }, 2000);
+
+
+
+            myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "android");
             myWebView.setDownloadListener(new DownloadListener() {
                 @Override
                 public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
@@ -144,6 +169,33 @@ public class MainActivity extends AppCompatActivity {
             noWebView.getSettings().setJavaScriptEnabled(true);
             noWebView.loadUrl("file:///android_asset/index.html");
         }
+    }
+    private void isCountdownFinished(WebView webView, ValueCallback<Boolean> callback) {
+        // Inject JavaScript code to check if the countdown is finished
+        webView.evaluateJavascript("javascript: countdown;", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String value) {
+                // "value" will contain the value of the "countdown" variable from JavaScript
+                // You need to parse the value and check if the countdown is finished.
+                // For example, if the countdown is a number that reaches 0, you can do something like this:
+                try {
+                    int countdownValue = Integer.parseInt(value);
+                    if (countdownValue <= 0) {
+                        // Countdown is finished
+                        // Notify the callback that the countdown is finished
+                        callback.onReceiveValue(true);
+                    } else {
+                        // Countdown is not finished yet
+                        // Notify the callback that the countdown is not finished
+                        callback.onReceiveValue(false);
+                    }
+                } catch (NumberFormatException e) {
+                    // Handle parsing error if necessary
+                    // Notify the callback that the countdown is not finished
+                    callback.onReceiveValue(false);
+                }
+            }
+        });
     }
 
     private void openExternalWebView(String url){
@@ -172,22 +224,33 @@ public class MainActivity extends AppCompatActivity {
                 ((RelativeLayout) findViewById(R.id.layout)).removeView(newpagebutton);
             }
         });
+
     }
 
     class WebViewClient extends android.webkit.WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
-            Log.d("MyApp",url);
-            Log.d("MyApp","kuki" + cookies);
-           /*if(url.equals("https://teacher.aceedventure.com/teacher/portal/tc_main.wp")){
-                cookieManager = CookieManager.getInstance();
-                cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/index_tc.wp");
-                //myWebView.loadUrl(urlRedirection+ cookies);
-               //myWebView.loadUrl(urlRedirection);
+            Log.d("myapp2", "shouldOverrideUrlLoading: " + "Now we are on : "+ url);
+
+            if (logOut){
+                if(url.contains("https://teacher.aceedventure.com/teacher/website/main/usermain.asp")){
+                    cookieManager = CookieManager.getInstance();
+                    cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/website/main/usermain.asp");
+                    cookieManager.setCookie(systemUrl, cookies);
+                    Log.d("Myapp2", "shouldOverrideUrlLoading: " + "kuki : "+ cookies);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    logincookies = cookies;
+                    if (logincookies != null){
+                        editor.putString(KEY_COOKIES, logincookies);
+                        Log.d("Myapp2", "onPageFinished: " + logincookies + "saved");
+                        editor.putBoolean(KEY_LOGIN_FLAG, true);
+                        editor.apply();
+                    }
+                    //myWebView.loadUrl(urlRedirection+ cookies);
+                    Log.d("Myapp2", "redirect url " + urlRedirection+ cookies);
+                }
             }
-            cookieManager = CookieManager.getInstance();
-            cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/index_tc.wp");*/
 
             return super.shouldOverrideUrlLoading(view, request);
         }
@@ -203,23 +266,48 @@ public class MainActivity extends AppCompatActivity {
             super.onPageFinished(view, url);
             // hide the progress bar once the page has loaded
             progressDialog.dismiss();
-            //cookies = cookieManager.getCookie(systemUrl);
-            Log.d("Myapp", "Saved Cookies for " + url + ": " + cookies);
-            Log.d("Myapp", "onPageFinished called with URL: " + url);
-            //https://teacher.aceedventure.com/teacher/portal/tc_main.wp
-           /*if (url.equals(systemUrl)) {
+            if (!cookiesRetrieved) {
+                // hide the progress bar once the page has loaded
+                progressDialog.dismiss();
+
+                // Retrieve the cookies and store them in the 'cookies' variable
+                cookies = cookieManager.getCookie(systemUrl);
+                Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);
+                Log.d("Myapp", "onPageFinished called with URL: " + url);
+
+                // Set the flag to true to indicate that cookies are retrieved
+                cookiesRetrieved = true;
+                cookies = cookieManager.getCookie(systemUrl);
+                Log.d("Cookies", "Saved Cookies for " + url + ": " + cookies);
+                Log.d("Myapp", "onPageFinished called with URL: " + url);
+                if (url.equals("https://teacher.aceedventure.com/teacher/website/main/usermain.asp")) {
                     CookieSyncManager.createInstance(MainActivity.this);
                     cookieManager = CookieManager.getInstance();
                     cookies = cookieManager.getCookie(systemUrl);
                     cookieManager.setCookie(systemUrl, cookies);
                     //CookieSyncManager.createInstance(MainActivity.this);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                   /* SharedPreferences.Editor editor = sharedPreferences.edit();
                     editor.putString(KEY_COOKIES, cookies);
                     editor.putBoolean(KEY_LOGIN_FLAG, true);
-                    editor.apply();
+                    editor.apply();*/
                     Log.d("Myapp", "onPageFinished: " + cookies + "saved");
-            }*/
-
+                   if (cookies != null) {
+                        String newurl = urlRedirection+cookies;
+                        myWebView.loadUrl(newurl);
+                        /*if(url.equals("https://teacher.aceedventure.com/teacher/index_ok.wp")) {
+                            cookieManager = CookieManager.getInstance();
+                            logincookies = cookieManager.getCookie(newurl);
+                            cookieManager.setCookie(newurl, logincookies);
+                            //CookieSyncManager.createInstance(MainActivity.this);
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString(KEY_COOKIES, logincookies);
+                            Log.d("Myapp2", "onPageFinished: " + logincookies + "saved");
+                            editor.putBoolean(KEY_LOGIN_FLAG, true);
+                            editor.apply();
+                        }*/
+                    }
+                }
+            }
 
 
         }
@@ -229,6 +317,7 @@ public class MainActivity extends AppCompatActivity {
             super.onReceivedError(view, request, error);
             myWebView.loadData("","text/html","utf-8"); // replace the default error page with plan content
             progressDialog.dismiss(); // hide the progress bar on error in loading
+            //Toast.makeText(getApplicationContext(),"Internet issue",Toast.LENGTH_SHORT).show();
         }
 
 
@@ -270,16 +359,26 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onBackPressed() {
+        progressDialog.dismiss();
+  /* if(myWebView.canGoBack()){
+            myWebView.goBack();
+        } else {
+            finish();*/
         if (mIsWebViewVisible) {
+            progressDialog.dismiss();
             // if the WebView is visible, go back to the previous page if possible
             if (myWebView.canGoBack()) {
                 myWebView.goBack();
+                progressDialog.dismiss();
+                Toast.makeText(this,"Click back once again to close the app",Toast.LENGTH_SHORT).show();
             } else {
+                progressDialog.dismiss();
                 // if there is no previous page, hide the WebView and reset the flag
                 myWebView.setVisibility(View.GONE);
                 mIsWebViewVisible = false;
+                Toast.makeText(this,"Click back once again to close the app",Toast.LENGTH_SHORT).show();
             }
-        } else {
+        }/* else {
             // if the WebView is not visible, show an AlertDialog to confirm exit
             new AlertDialog.Builder(this)
                     .setTitle("Confirm Exit")
@@ -293,8 +392,9 @@ public class MainActivity extends AppCompatActivity {
                     .setNegativeButton(android.R.string.no, null)
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show();
-        }
+        }*/
     }
+
     public boolean checkInternetConnection(Context context) {
 
         ConnectivityManager con_manager = (ConnectivityManager)
@@ -312,6 +412,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
     private void noInternet() {
         Objects.requireNonNull(getSupportActionBar()).hide();
 
@@ -321,6 +422,9 @@ public class MainActivity extends AppCompatActivity {
         myWebView.loadUrl("file:///android_asset/no_internet.html");
 
     }
+
+
+
     // Declare the launcher at the top of your Activity/Fragment:
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -348,6 +452,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
+
 
     public void getFirebaseToken(FirebaseTokenCallback callback) {
         FirebaseMessaging.getInstance().getToken()
@@ -385,6 +492,8 @@ public class MainActivity extends AppCompatActivity {
             return notytoken;
         }
 
+
+
         @JavascriptInterface
         public void invokeExternalChromeWebview(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -398,6 +507,8 @@ public class MainActivity extends AppCompatActivity {
                 browserIntent.setPackage(null);
                 startActivity(browserIntent);
             }
+
+            // startActivity(browserIntent);
         }
 
         @JavascriptInterface
@@ -415,10 +526,11 @@ public class MainActivity extends AppCompatActivity {
         }
         @JavascriptInterface
         public void clearCookies() {
+            loginHandled = false;
+            logOut = true;
             CookieManager.getInstance().removeAllCookies(null);
             CookieManager.getInstance().flush();
             Log.d("Myapp", "clear : " + cookies);
-
         }
         @JavascriptInterface
         public void storeLoginInfo(String username, String password) {
