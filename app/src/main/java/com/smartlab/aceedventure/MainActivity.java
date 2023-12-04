@@ -337,26 +337,9 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     public void onBackPressed() {
-        progressDialog.dismiss();
-  /* if(myWebView.canGoBack()){
+        if (myWebView.canGoBack()) {
             myWebView.goBack();
         } else {
-            finish();*/
-        if (mIsWebViewVisible) {
-            progressDialog.dismiss();
-            // if the WebView is visible, go back to the previous page if possible
-            if (myWebView.canGoBack()) {
-                myWebView.goBack();
-                progressDialog.dismiss();
-                Toast.makeText(this,"Click back once again to close the app",Toast.LENGTH_SHORT).show();
-            } else {
-                progressDialog.dismiss();
-                // if there is no previous page, hide the WebView and reset the flag
-                myWebView.setVisibility(View.GONE);
-                mIsWebViewVisible = false;
-                Toast.makeText(this,"Click back once again to close the app",Toast.LENGTH_SHORT).show();
-            }
-        }/* else {
             // if the WebView is not visible, show an AlertDialog to confirm exit
             new AlertDialog.Builder(this)
                     .setTitle("Confirm Exit")
@@ -370,8 +353,9 @@ public class MainActivity extends AppCompatActivity {
                     .setNegativeButton(android.R.string.no, null)
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show();
-        }*/
+        }
     }
+    //}
 
     public boolean checkInternetConnection(Context context) {
 
