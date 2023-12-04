@@ -38,10 +38,6 @@
         android:name="firebase_analytics_collection_enabled"
         android:value="false" />
 
-
-
-
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -83,6 +79,8 @@
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
             </intent-filter>
         </receiver>
+
+
     </application>
 
 

@@ -44,4 +44,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging-directboot:23.1.2'
 
     // Add the dependencies for the Firebase Cloud Messaging and Analytics librarie
+
+    //add android room
+    implementation "androidx.room:room-runtime:2.4.0"
 }
