@@ -107,7 +107,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         isConnected = checkInternetConnection(this);
 
-
         if (isConnected == true) {
             getSupportActionBar().hide();
             progressDialog = new ProgressDialog(MainActivity.this); //replace CONTEXT with YOUR_ACTIVITY_NAME.CLASS`
@@ -149,8 +148,15 @@ public class MainActivity extends AppCompatActivity {
                             thisCook = cursor.getString(1);
                         }
                         if (!thisCook.isEmpty()){
-                            myWebView.loadUrl(systemUrl + "?sessionid=appsessionid=" +thisCook);
-                            Log.d("Myapp", "with token   " + systemUrl + "?sessionid=appsessionid" +thisCook);
+
+                            String NotiUrl = getIntent().getStringExtra("url");
+                            if (NotiUrl == null) {
+                                myWebView.loadUrl(systemUrl + "?sessionid=appsessionid=" +thisCook);
+                                Log.d("Myapp", "with token   " + systemUrl + "?sessionid=appsessionid" +thisCook);
+                            }
+                            else
+                                myWebView.loadUrl(NotiUrl);
+
                         }
 
                     }
