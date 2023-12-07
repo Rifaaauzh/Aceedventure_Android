@@ -155,6 +155,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 
+    private String getFcmToken() {
+        // Use FirebaseInstanceId.getInstance().getInstanceId() to get the FCM token
+        // Replace the following line with the actual method call:
+        // return FirebaseInstanceId.getInstance().getInstanceId().getResult().getToken();
+        return "mocked_fcm_token";
+    }
+
     public static class MyWorker extends Worker {
 
         public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {

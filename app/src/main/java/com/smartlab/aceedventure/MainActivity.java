@@ -458,6 +458,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public String getFCMToken(String username) {
+            Log.d("myapp2",  "fcm username : "+ username);
+            return notytoken;
+        }
+
+        @JavascriptInterface
         public void invokeExternalChromeWebview(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
