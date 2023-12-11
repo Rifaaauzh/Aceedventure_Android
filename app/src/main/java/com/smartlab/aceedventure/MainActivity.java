@@ -496,9 +496,9 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void clearCookies() {
            // Log.d("Myapp", "clear : " + cookies);
-          //  DB.deleteAllData();
-          //  myWebView.reload();
-            Toast.makeText(mContext,"test",Toast.LENGTH_SHORT).show();
+            DB.deleteAllData();
+            myWebView.reload();
+            //Toast.makeText(mContext,"test",Toast.LENGTH_SHORT).show();
         }
         @JavascriptInterface
         public void storeLoginInfo(String username, String password) {
