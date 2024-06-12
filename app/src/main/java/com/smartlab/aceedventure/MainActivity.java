@@ -1,3 +1,4 @@
+// MainActivity.java
 package com.smartlab.aceedventure;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -49,6 +50,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import com.smartlab.aceedventure.R;
 import java.util.Objects;
 
 
@@ -56,7 +58,7 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String systemUrl = "https://teacher.aceedventure.com/teacher/index_ok.wp";
+    private String systemUrl = "https://teacher.aceedventure.com/teacher/";
 
     WebView myWebView;
     CookieManager cookieManager;
@@ -73,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isConnected = true;
     private static String urlRedirection ="https://teacher.aceedventure.com/teacher/index_ok.wp?sessionid=";
+    private static String urlwithSession = "https://teacher.aceedventure.com/teacher/portal/tc_main.wp?sessionid=";
     private String temp;
     private static String cookies;
     private SharedPreferences sharedPreferences;
@@ -128,42 +131,13 @@ public class MainActivity extends AppCompatActivity {
             myWebView.setWebChromeClient(new chromeView()); //we would be overriding WebChromeClient() with custom methods.
             String sessionToken = cookieManager.getCookie(systemUrl);
 
+
             //count db
 
             Log.d("MyApp", "isLoginHandled: " + isLoginHandled);
+            Log.d("MyApp", "sessionToken: " + sessionToken);
 
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-
-                    if (hasCookie==0) {
-                        myWebView.loadUrl(systemUrl);
-                        Log.d("Myapp", "no token   " + systemUrl);
-                        // Dismiss the ProgressDialog
-                        progressDialog.dismiss();
-                    }
-                    else {
-                        String thisCook = "";
-                        while (cursor.moveToNext()) {
-                            thisCook = cursor.getString(1);
-                        }
-                        if (!thisCook.isEmpty()){
-
-                            String NotiUrl = getIntent().getStringExtra("url");
-                            if (NotiUrl == null) {
-                                myWebView.loadUrl(systemUrl + "?sessionid=appsessionid=" +thisCook);
-                                Log.d("Myapp", "with token   " + systemUrl + "?sessionid=appsessionid" +thisCook);
-                            }
-                            else
-                                myWebView.loadUrl(NotiUrl);
-
-                        }
-
-                    }
-                }
-            }, 2000);
-
-
+            handleUrlLoading(getIntent());
 
             myWebView.addJavascriptInterface(new MyJavascriptInterface(this), "android");
             myWebView.setDownloadListener(new DownloadListener() {
@@ -174,15 +148,69 @@ public class MainActivity extends AppCompatActivity {
                     i.setData(Uri.parse(url));
                     startActivity(i);
                 }
-
             });
-        } else{
-            getSupportActionBar().hide();
-            noWebView = (WebView) findViewById(R.id.webview);
-            noWebView.getSettings().setJavaScriptEnabled(true);
-            noWebView.loadUrl("file:///android_asset/index.html");
+
+        } else {
+            showNoInternetPage();
         }
     }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d("mes", "onNewIntent called");
+        setIntent(intent); // Update the intent
+        handleUrlLoading(intent); // Handle the new intent
+    }
+
+    private void handleUrlLoading(Intent intent) {
+        if (intent == null) {
+            Log.e("mes", "Intent is null in handleUrlLoading");
+            return;
+        }
+        String notificationUrl = intent.getStringExtra("url");
+        if (notificationUrl != null && !notificationUrl.isEmpty()) {
+            if (checkInternetConnection(this)) {
+                myWebView.loadUrl(notificationUrl);
+            } else {
+                showNoInternetPage();
+            }
+        } else {
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Cursor cursor = DB.getData();
+                    Log.d("Myapp", "token " + hasCookie);
+                    if (hasCookie == 0) {
+                        myWebView.loadUrl(systemUrl);
+                        Log.d("Myapp", "no token " + systemUrl);
+                        progressDialog.dismiss();
+                    } else {
+                        String thisCook = "";
+
+                        if (cursor.moveToNext()) {
+                            thisCook = cursor.getString(1);
+                            Log.d("Myapp", "cursor " + thisCook);
+                        }
+                        if (!thisCook.isEmpty()) {
+                            myWebView.loadUrl(systemUrl + "?sessionid=appsessionid=" + thisCook);
+                            Log.d("Myapp", "with token " + systemUrl + "?sessionid=appsessionid" + thisCook);
+                        }
+
+                    }
+                }
+            }, 2000);
+        }
+    }
+
+    private void showNoInternetPage() {
+        getSupportActionBar().hide();
+        noWebView = findViewById(R.id.webview);
+        noWebView.getSettings().setJavaScriptEnabled(true);
+        noWebView.loadUrl("file:///android_asset/no_internet.html");
+    }
+
+
     private void isCountdownFinished(WebView webView, ValueCallback<Boolean> callback) {
         // Inject JavaScript code to check if the countdown is finished
         webView.evaluateJavascript("javascript: countdown;", new ValueCallback<String>() {
@@ -243,42 +271,48 @@ public class MainActivity extends AppCompatActivity {
     class WebViewClient extends android.webkit.WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+
             String url = request.getUrl().toString();
             Log.d("myapp2", "shouldOverrideUrlLoading: " + "Now we are on : "+ url);
 
-               if(url.contains("https://teacher.aceedventure.com/teacher/website/main/usermain.asp")){
-                    cookieManager = CookieManager.getInstance();
-                    cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/website/main/usermain.asp");
-                    cookieManager.setCookie(systemUrl, cookies);
-                    Log.d("Myapp2", "shouldOverrideUrlLoading: " + "kuki : "+ cookies);
-                   // SharedPreferences.Editor editor = sharedPreferences.edit();
-                    logincookies = cookies;
-                    if (logincookies != null){
-                        String[] params = logincookies.split(";");
-                        String sessionID="";
-                        // Find the parameter with name "appsessionid"
-                        for (String param : params) {
-                            if (param.startsWith("appsessionid=")) {
-                                // Extract the value after "sessionid="
-                                sessionID = param.substring("appsessionid=".length());
-                                Log.d("Myapp2", "split cookies: " + sessionID + "saved");
-                                break;
-                            }
+
+            //if(url.contains("https://teacher.aceedventure.com/teacher/website/main/usermain.asp")){
+                cookieManager = CookieManager.getInstance();
+                cookies = cookieManager.getCookie("https://teacher.aceedventure.com/teacher/");
+                cookieManager.setCookie(systemUrl, cookies);
+                Log.d("Myapp2", "shouldOverrideUrlLoading: " + "kuki : "+ cookies);
+                // SharedPreferences.Editor editor = sharedPreferences.edit();
+                logincookies = cookies;
+                if (logincookies != null){
+                    String[] params = logincookies.split(";");
+                    String sessionID="";
+                    // Find the parameter with name "appsessionid"
+                    for (String param : params) {
+                        if (param.startsWith("appsessionid=")) {
+                            // Extract the value after "sessionid="
+                            sessionID = param.substring("appsessionid=".length());
+                            Log.d("Myapp2", "split cookies: " + sessionID + "saved");
+                            break;
                         }
-
-
-                        if(hasCookie==0) {
-                            //save cookie
-                            boolean isaved = DB.insertData(sessionID,url,"1","1");
-                            Log.d("Myapp2", "isaved: data" + isaved + " saved");
-                        }
-
                     }
-                    Log.d("Myapp2", "redirect url " + urlRedirection+ cookies);
-                }
 
 
-            return super.shouldOverrideUrlLoading(view, request);
+                    if(hasCookie==0) {
+                        //save cookie
+                        //DB.insertData(sessionID,url,"1","1");
+                        sessionID = cookies;
+                        Log.d("Myapp2", "cookie " + sessionID + " saved");
+                        boolean isaved = DB.insertData(sessionID,url,"1","1");
+                        Log.d("Myapp2", "isaved: data" + isaved + " saved");
+                        String userID = DBHelper.USER_NAME;
+                        Log.d("MyApp2", "UserId: " + userID);
+                    }
+
+                //}
+                Log.d("Myapp2", "redirect url " + urlRedirection+ cookies);
+           }
+
+            return super.shouldOverrideUrlLoading(view, url);
         }
 
         @Override
@@ -293,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
             progressDialog.hide();
 
             Log.d("myapp2", "shouldOverrideUrlLoading: " + "Now we are finish : "+ url);
-            // hide the progress bar once the page has loaded
+            String userID = DBHelper.USER_NAME;
         }
 
         @Override
@@ -428,8 +462,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<String> task) {
                         if (task.isSuccessful()) {
                             String token = task.getResult();
-                            Log.d("tokennn:", token);
-                            //  Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
+                            String msg = getString(R.string.msg_token_fmt, token);
+                            Log.d("tokennn:", msg);
+                            Toast.makeText(MainActivity.this, token, Toast.LENGTH_SHORT).show();
                             callback.onTokenReceived(token);
                         } else {
                             Log.w("TAG", "Fetching FCM registration token failed", task.getException());
@@ -495,7 +530,7 @@ public class MainActivity extends AppCompatActivity {
         }
         @JavascriptInterface
         public void clearCookies() {
-           // Log.d("Myapp", "clear : " + cookies);
+            // Log.d("Myapp", "clear : " + cookies);
             DB.deleteAllData();
             myWebView.reload();
             //Toast.makeText(mContext,"test",Toast.LENGTH_SHORT).show();

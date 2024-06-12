@@ -39,19 +39,29 @@ public class DBHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean insertData(String name,String userid,String pass, String signed_in) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(USER_NAME,name);
-        contentValues.put(USER_ID,userid);
-        contentValues.put(PASS_HASH,pass);
-        contentValues.put(SIGNED_IN,signed_in);
-        long result = db.insert(TABLE_NAME,null ,contentValues);
-        if(result == -1)
+    public boolean insertData(String name, String userid, String pass, String signed_in) {
+        SQLiteDatabase db = null;
+        try {
+            db = this.getWritableDatabase();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(USER_NAME, name);
+            Log.d("dbsaved", "insertData name: " + name);
+            contentValues.put(USER_ID, userid);
+            contentValues.put(PASS_HASH, pass);
+            contentValues.put(SIGNED_IN, signed_in);
+
+            long result = db.insert(TABLE_NAME, null, contentValues);
+            return result != -1;
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
-        else
-            return true;
+        } finally {
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
+        }
     }
+
 
 
     public int numberOfRows() {
